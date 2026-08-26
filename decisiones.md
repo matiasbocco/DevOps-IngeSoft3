@@ -68,3 +68,49 @@ Otro problema: la tabla `Items` no se creaba aunque EF Core decía "no migration
 ### Declaración de uso de IA
 
 La estructura inicial del proyecto (archivos `.csproj`, `Program.cs`, `Dockerfile`, `docker-compose.yml`, componentes React) fue generada con asistencia de Claude Code. El código fue revisado, los errores de contenerización fueron diagnosticados y corregidos por mí corriendo la app de punta a punta: levanté el stack con `docker compose up`, verifiqué cada endpoint desde el browser y con `curl`, y confirmé la persistencia y el borrado del volumen manualmente.
+
+
+## TP3 — Planificación y trazabilidad
+
+### Duración del sprint
+
+Elegí sprints de **1 semana**. Justificación: el reglamento de la materia está pensado para que
+cada TP tome aproximadamente una semana si se viene al día, así que alinear el sprint a ese ritmo
+me permite usar cada entrega semanal de la cursada como cierre natural del sprint, sin inventar un
+calendario paralelo.
+
+### Límite de trabajo en progreso
+
+Configuré el límite en **2** para la columna In Progress. Sale de la regla de arranque de la guía:
+cantidad de personas + 1 (trabajando solo, 1 + 1 = 2). El "+1" me da margen para no quedar
+completamente trabado si algo queda esperando una revisión o una respuesta externa, sin llegar a
+que el límite deje de cumplir su función. Si en la práctica nunca llego a alcanzarlo, es señal de
+que puedo bajarlo a 1; si lo alcanzo todo el tiempo y me frena, lo subiría.
+
+### Diagnóstico de la historia mal escrita
+
+La historia `"Como desarrollador quiero crear la tabla usuarios"` es una **tarea técnica
+disfrazada de historia de usuario**. El problema no es de redacción sino de fondo: crear una tabla
+en la base de datos es un paso de implementación interno, no algo que un usuario final "quiere" o
+experimenta — nadie usando la app pide que exista una tabla, lo que pediría es algo observable
+(por ejemplo, poder iniciar sesión). La reescribiría separando los dos niveles: una historia real
+con beneficio para el usuario (`"Como usuario quiero poder iniciar sesión para acceder a mi
+inventario personal"`), y la creación de la tabla como una de las **tareas técnicas** colgando de
+esa historia, no como historia en sí misma.
+
+### Problemas encontrados y cómo los resolví
+
+- **El primer PR de trazabilidad no cerró el issue**: creé el archivo `.github/workflows/ci.yml`
+  y mergeé el PR sin completar la descripción con `Closes #9` (quedó "No description provided").
+  Como GitHub solo evalúa las palabras clave de cierre en el momento del merge (no las revisa
+  retroactivamente si editás la descripción después), tuve que abrir un segundo PR chico
+  (un comentario aclaratorio en el mismo archivo) con la descripción correcta esta vez, y ese sí
+  cerró la tarea #9 automáticamente.
+- **Renombré el repositorio** de `ingsoft3-tp01` a `DevOps-IngeSoft3` durante el TP3; GitHub
+  redirige automáticamente las URLs viejas al nombre nuevo, así que no generó ningún problema real
+  más allá de la confusión inicial al verificar los links.
+
+### Declaración de uso de IA
+
+Usé Claude para señalarme el error del primer PR sin `Closes #N`. El diagnóstico de la historia mal escrita lo pensé y respondí yo mismo
+antes de que Claude lo confirmara. Y use claude para la redaccion de estos textos.
