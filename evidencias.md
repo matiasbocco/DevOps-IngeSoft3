@@ -64,39 +64,39 @@ El tag se creó anotado desde la máquina (`git tag -a v1.0.0 -m "..." + git pus
 
 ![sistema arriba](img/Captura%20de%20pantalla%202026-08-20%20163538.png)
 
+
 `docker compose up --build` terminó sin errores. Los tres servicios — `db`, `backend`, `frontend` — aparecen como `Started`/`Healthy`. El frontend responde en `http://localhost:3000` con la pantalla inicial del inventario y el mensaje "No hay items." — señal de que el backend también está up y la tabla fue creada por `EnsureCreated`.
+
+![sistema listo](img/Captura%20de%20pantalla%202026-08-20%20170325.png)
+Listo para cargar items
 
 ## 2. Item creado: POST /api/items/stock → 201
 
-![item creado](img/Captura%20de%20pantalla%202026-08-20%20170325.png)
+![item creado](img/Captura%20de%20pantalla%202026-08-20%20170425.png)
 
 Se cargó un item nuevo desde el formulario (nombre, cantidad, ubicación, categoría). El backend devolvió 201 y el item apareció en la tabla del frontend. La columna Cantidad muestra el valor ingresado.
 
 ## 3. Suma de stock: segundo POST con mismo nombre+ubicación → 200
 
-![suma de stock](img/Captura%20de%20pantalla%202026-08-20%20170425.png)
+![suma de stock](img/Captura%20de%20pantalla%202026-08-20%20170617.png)
+
 
 Se volvió a cargar el mismo nombre y ubicación con una cantidad diferente. El backend detectó el item existente, sumó las cantidades y devolvió 200 con el item actualizado. La tabla refleja la cantidad acumulada — este es el comportamiento central del endpoint `/api/items/stock`.
 
-## 4. Persistencia con down/up sin -v
 
-![persistencia](img/Captura%20de%20pantalla%202026-08-20%20170617.png)
-
-Se corrió `docker compose down` (sin `-v`) y luego `docker compose up -d`. Al volver a abrir el frontend, los items seguían ahí. El volumen `pgdata` sobrevivió al ciclo de stop/start porque no se le pidió que se borrara.
-
-## 5. Borrado con down -v
+## 4. Borrado con down -v
 
 ![borrado con down -v](img/Captura%20de%20pantalla%202026-08-20%20170804.png)
 
 Se corrió `docker compose down -v`. El volumen `ingsoft3-tp01_pgdata` fue eliminado junto con los contenedores. En el siguiente `up`, el frontend volvió a mostrar "No hay items." — la base arrancó vacía. Esto confirma que el único estado persistente está en el volumen: sin él, la app es completamente efímera.
 
-## 6. Comparación de tamaños: SDK vs imagen final
+## 5. Comparación de tamaños: SDK vs imagen final
 
 ![tamaños de imágenes](img/Captura%20de%20pantalla%202026-08-20%20171210.png)
 
 `docker images` mostrando las imágenes generadas. La imagen de build (sdk:8.0) pesa significativamente más que la imagen final de runtime (aspnet:8.0). El multi-stage hace que la imagen que se despliega solo contenga el binario publicado y el runtime, sin el SDK, el código fuente ni la caché de paquetes.
 
-## 7. Imágenes publicadas en ghcr.io
+## 6. Imágenes publicadas en ghcr.io
 
 ![imágenes publicadas](img/Captura%20de%20pantalla%202026-08-20%20184541.png)
 

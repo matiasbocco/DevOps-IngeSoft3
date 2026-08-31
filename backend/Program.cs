@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NoExiste;
 using InventarioApi;
 using InventarioApi.Models;
 
