@@ -1,3 +1,5 @@
+[![CI](https://github.com/matiasbocco/DevOps-IngeSoft3/actions/workflows/ci.yml/badge.svg)](https://github.com/matiasbocco/DevOps-IngeSoft3/actions/workflows/ci.yml) 
+
 ## Instalación
 
 git clone https://github.com/matiasbocco/ingsoft3-tp01
