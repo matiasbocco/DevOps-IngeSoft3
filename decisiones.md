@@ -114,3 +114,58 @@ esa historia, no como historia en sí misma.
 
 Usé Claude para señalarme el error del primer PR sin `Closes #N`. El diagnóstico de la historia mal escrita lo pensé y respondí yo mismo
 antes de que Claude lo confirmara. Y use claude para la redaccion de estos textos.
+
+
+## TP4 — CI: Pipelines as Code
+
+### Estructura del pipeline
+
+El workflow tiene **dos jobs en paralelo**: `build-backend` y `build-frontend`, uno por cada
+Dockerfile del TP2. Los separé porque corren en máquinas independientes y no dependen entre sí —
+no hay razón para esperar a que termine uno para empezar el otro. Cada job dispara con
+`pull_request` (verificación antes del merge, la corrida que realmente importa) y `push` a `main`
+(la que deja el estado del badge y el cache disponible para el próximo PR).
+
+### Qué cachea y qué pasa si desaparece
+
+Se cachean las **capas de la imagen Docker** de cada Dockerfile — específicamente las que no
+cambian entre corridas (por ejemplo, la capa de `dotnet restore` si no cambió ningún `.csproj`, o
+`npm ci` si no cambió el `package-lock.json`). Cada job usa su propio `scope` (`backend` /
+`frontend`) para no pisarse el cache entre sí. En la segunda corrida del mismo PR se vio
+`backend` con 44% cached y `frontend` con 40% cached, bajando de ~20s a 2-3s de duración.
+
+El cache es una optimización, no una dependencia: si GitHub lo desaloja (tiene límite de tamaño y
+puede desaparecer en cualquier momento), el pipeline vuelve a construir todo desde cero — más
+lento, pero funciona exactamente igual. Si el pipeline fallara sin cache, no seria un cache: sería
+una dependencia escondida que nunca debí tener.
+
+### Por qué construye con el Dockerfile en vez de compilar por su cuenta
+
+El pipeline no tiene ninguna línea de `dotnet` ni `npm` — usa `docker/build-push-action` apuntando
+al mismo Dockerfile del TP2. Si el workflow compilara por su cuenta, tendría dos definiciones de
+build (una en el YAML, otra en el Dockerfile) que tarde o temprano divergen, y estaría verificando
+una compilación distinta de la que después se despliega. Con este enfoque, lo que el pipeline
+construye es exactamente lo mismo que se va a desplegar más adelante.
+
+### Problemas encontrados y cómo los resolví
+
+- **El editor web de GitHub rompió el formato del YAML**: al pegar el workflow completo directo en
+  el editor de texto de github.com, los saltos de línea se colapsaron y el archivo quedó como una
+  sola línea gigante. El resultado fue una corrida que fallaba en 0 segundos con "This workflow
+  graph cannot be shown" — ni siquiera llegaba a interpretar el YAML. Lo resolví editando el
+  archivo en VS Code (donde el pegado preserva la indentación) y subiéndolo por Git en vez de por
+  el editor web.
+
+- **El gate bloqueó el merge como se esperaba**: se rompió a propósito `build-backend` agregando
+  `using NoExiste;` en `Program.cs`. El PR quedó con "Merging is blocked" y el check `build-backend` en rojo
+  (Required), mientras `build-frontend` seguía en verde — confirmando que un solo check requerido
+  en rojo alcanza para frenar el merge. Saqué la línea rota, pusheé el fix, y el pipeline volvió a
+  verde solo, destrabando el merge.
+
+
+### Declaración de uso de IA
+
+Usé Claude para guiarme paso a paso por la escritura del workflow (los dos jobs, cache con scope
+separado, el gate en branch protection), por si no entiendia la explicacion del repo del TP, entonces trabajaba con ambos en paralelo para asegurarme. Y para diagnosticar los errores que fueron apareciendo
+(el YAML roto por el editor web, el conflicto del README). 
+Verifiqué y realicé cada paso yo mismo: corrí el `docker build` local antes de subir el código roto, confirmé visualmente el bloqueo del merge en GitHub, y confirmé el porcentaje de cache reutilizado en la segunda corrida.
