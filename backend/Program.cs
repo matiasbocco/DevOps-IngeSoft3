@@ -15,12 +15,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IAlertaReposicionService, AlertaReposicionService>();
 
 var app = builder.Build();
 
-// Apply migrations on startup
-using (var scope = app.Services.CreateScope())
+// Apply migrations on startup (skipped in test environment where EnsureCreated() is used)
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
@@ -54,10 +56,13 @@ app.MapGet("/api/items/{id:int}", async (int id, AppDbContext db) =>
 });
 
 // POST /api/items/stock
-app.MapPost("/api/items/stock", async (StockRequest request, AppDbContext db) =>
+app.MapPost("/api/items/stock", async (StockRequest request, AppDbContext db, IAlertaReposicionService alertaService) =>
 {
     if (string.IsNullOrWhiteSpace(request.Nombre) || string.IsNullOrWhiteSpace(request.Ubicacion))
         return Results.BadRequest("Nombre and Ubicacion are required.");
+
+    if (request.Cantidad < 0)
+        return Results.BadRequest("Cantidad no puede ser negativa.");
 
     var existing = await db.Items.FirstOrDefaultAsync(i =>
         i.Nombre.ToLower() == request.Nombre.ToLower() &&
@@ -67,6 +72,8 @@ app.MapPost("/api/items/stock", async (StockRequest request, AppDbContext db) =>
     {
         existing.Cantidad += request.Cantidad;
         await db.SaveChangesAsync();
+        if (existing.Cantidad <= 5)
+            await alertaService.AlertarAsync(existing);
         return Results.Ok(existing);
     }
 
@@ -80,6 +87,8 @@ app.MapPost("/api/items/stock", async (StockRequest request, AppDbContext db) =>
 
     db.Items.Add(newItem);
     await db.SaveChangesAsync();
+    if (newItem.Cantidad <= 5)
+        await alertaService.AlertarAsync(newItem);
     return Results.Created($"/api/items/{newItem.Id}", newItem);
 });
 
