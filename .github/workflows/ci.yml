@@ -24,11 +24,45 @@ jobs:
       - name: Construir la imagen del backend
         uses: docker/build-push-action@v7
         with:
-          context: ./backend
+          context: .
+          file: backend/Dockerfile
           push: false
           tags: backend:ci
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
+
+      - name: Construir la etapa de tests
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: test
+          load: true
+          push: false
+          tags: backend-test:ci
+          cache-from: type=gha,scope=backend-test
+          cache-to: type=gha,mode=max,scope=backend-test
+
+      - name: Correr los tests con coverage
+        run: |
+          docker run --rm -v "${{ github.workspace }}/TestResults:/out" backend-test:ci
+
+      - name: Reporte de coverage
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -sourcedirs:backend \
+            -targetdir:coveragereport "-reporttypes:Html;MarkdownSummaryGithub"
+          cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Publicar coverage y resultados
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-report
+          path: |
+            coveragereport
+            TestResults/tests.trx
 
   build-frontend:
     runs-on: ubuntu-latest
