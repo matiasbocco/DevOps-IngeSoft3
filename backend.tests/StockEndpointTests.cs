@@ -310,4 +310,32 @@ public class StockEndpointTests : IClassFixture<CustomWebApplicationFactory>
             s => s.AlertarAsync(It.Is<Item>(i => i.Nombre == "ItemBajoStock" && i.Cantidad == 3)),
             Times.Once);
     }
+
+    [Fact]
+    public async Task PostStock_ItemExistenteBajaAStockMinimo_LlamaAlertaService()
+    {
+        var mockAlerta = new Mock<IAlertaReposicionService>();
+        mockAlerta
+            .Setup(s => s.AlertarAsync(It.IsAny<Item>()))
+            .Returns(Task.CompletedTask);
+
+        await using var factory = new MockAlertaWebApplicationFactory(mockAlerta.Object);
+        var client = factory.CreateClient();
+
+        var seed = new { Nombre = "ItemExistenteBajo", Cantidad = 2, Ubicacion = "DepMockExist", Categoria = "Mock" };
+        var seedResp = await client.PostAsJsonAsync("/api/items/stock", seed);
+        Assert.Equal(HttpStatusCode.Created, seedResp.StatusCode);
+
+        // Limpiar invocaciones del seed (cantidad 2 <= 5 también dispara la alerta)
+        mockAlerta.Invocations.Clear();
+
+        // Act: suma 1 -> total 3, item existente, debe disparar la alerta
+        var request = new { Nombre = "ItemExistenteBajo", Cantidad = 1, Ubicacion = "DepMockExist", Categoria = "Mock" };
+        var response = await client.PostAsJsonAsync("/api/items/stock", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        mockAlerta.Verify(
+            s => s.AlertarAsync(It.Is<Item>(i => i.Nombre == "ItemExistenteBajo" && i.Cantidad == 3)),
+            Times.Once);
+    }
 }
