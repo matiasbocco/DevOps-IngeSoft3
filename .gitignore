@@ -6,6 +6,15 @@ dist/
 bin/
 obj/
 
+# Test results y coverage local (generados por dotnet test)
+TestResults/
+coverage.json
+coverage_out/
+coveragereport/
+
+# Artefacto de comando roto (mkdir con -p en PowerShell)
+backend.tests/backend.tests/
+
 # Environment
 .env
 
