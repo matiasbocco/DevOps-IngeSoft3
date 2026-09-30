@@ -1,0 +1,274 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="1" branch-rate="1" version="1.9" timestamp="1790805649" lines-covered="52" lines-valid="52" branches-covered="16" branches-valid="16">
+  <sources>
+    <source>C:\Users\Mbocco\OneDrive\Escritorio\Mati\mati bocco papá\Ingenieria en Sistemas\Cuarto Año\Ingenieria de Software III\DevOps-IngeSoft3\backend\</source>
+  </sources>
+  <packages>
+    <package name="InventarioApi" line-rate="1" branch-rate="1" complexity="27">
+      <classes>
+        <class name="InventarioApi.AppDbContext" filename="AppDbContext.cs" line-rate="1" branch-rate="1" complexity="2">
+          <methods>
+            <method name="get_Items" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="61" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(Microsoft.EntityFrameworkCore.DbContextOptions`1&lt;InventarioApi.AppDbContext&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="117" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="61" branch="False" />
+            <line number="8" hits="117" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.AlertaReposicionService" filename="IAlertaReposicionService.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="AlertarAsync" signature="(InventarioApi.Models.Item)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="6" branch="False" />
+                <line number="14" hits="6" branch="False" />
+                <line number="15" hits="6" branch="False" />
+                <line number="16" hits="6" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="13" hits="6" branch="False" />
+            <line number="14" hits="6" branch="False" />
+            <line number="15" hits="6" branch="False" />
+            <line number="16" hits="6" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Servicios.StockService" filename="Servicios\StockService.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(InventarioApi.AppDbContext,InventarioApi.IAlertaReposicionService)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="30" branch="False" />
+                <line number="15" hits="30" branch="False" />
+                <line number="16" hits="30" branch="False" />
+                <line number="17" hits="30" branch="False" />
+                <line number="18" hits="30" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="14" hits="30" branch="False" />
+            <line number="15" hits="30" branch="False" />
+            <line number="16" hits="30" branch="False" />
+            <line number="17" hits="30" branch="False" />
+            <line number="18" hits="30" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Servicios.StockService/&lt;RegistrarStockAsync&gt;d__4" filename="Servicios\StockService.cs" line-rate="1" branch-rate="1" complexity="10">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="10">
+              <lines>
+                <line number="21" hits="33" branch="False" />
+                <line number="22" hits="33" branch="False" />
+                <line number="23" hits="33" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="127" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="24" hits="3" branch="False" />
+                <line number="26" hits="30" branch="False" />
+                <line number="27" hits="30" branch="False" />
+                <line number="28" hits="30" branch="False" />
+                <line number="30" hits="30" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="614" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="31" hits="6" branch="False" />
+                <line number="32" hits="6" branch="False" />
+                <line number="33" hits="6" branch="False" />
+                <line number="34" hits="6" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="796" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="35" hits="2" branch="False" />
+                <line number="36" hits="6" branch="False" />
+                <line number="39" hits="24" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="1025" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="40" hits="24" branch="False" />
+                <line number="41" hits="24" branch="False" />
+                <line number="42" hits="24" branch="False" />
+                <line number="43" hits="24" branch="False" />
+                <line number="44" hits="24" branch="False" />
+                <line number="45" hits="24" branch="False" />
+                <line number="47" hits="24" branch="False" />
+                <line number="48" hits="24" branch="False" />
+                <line number="49" hits="24" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="1213" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="50" hits="12" branch="False" />
+                <line number="52" hits="24" branch="False" />
+                <line number="53" hits="30" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="21" hits="33" branch="False" />
+            <line number="22" hits="33" branch="False" />
+            <line number="23" hits="33" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="127" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="24" hits="3" branch="False" />
+            <line number="26" hits="30" branch="False" />
+            <line number="27" hits="30" branch="False" />
+            <line number="28" hits="30" branch="False" />
+            <line number="30" hits="30" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="614" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="31" hits="6" branch="False" />
+            <line number="32" hits="6" branch="False" />
+            <line number="33" hits="6" branch="False" />
+            <line number="34" hits="6" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="796" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="35" hits="2" branch="False" />
+            <line number="36" hits="6" branch="False" />
+            <line number="39" hits="24" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="1025" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="40" hits="24" branch="False" />
+            <line number="41" hits="24" branch="False" />
+            <line number="42" hits="24" branch="False" />
+            <line number="43" hits="24" branch="False" />
+            <line number="44" hits="24" branch="False" />
+            <line number="45" hits="24" branch="False" />
+            <line number="47" hits="24" branch="False" />
+            <line number="48" hits="24" branch="False" />
+            <line number="49" hits="24" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="1213" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="50" hits="12" branch="False" />
+            <line number="52" hits="24" branch="False" />
+            <line number="53" hits="30" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Models.Item" filename="Models\Item.cs" line-rate="1" branch-rate="1" complexity="5">
+          <methods>
+            <method name="get_Id" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="5" hits="76" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Nombre" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="6" hits="153" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Cantidad" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="137" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Ubicacion" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="146" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Categoria" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="140" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="5" hits="76" branch="False" />
+            <line number="6" hits="153" branch="False" />
+            <line number="7" hits="137" branch="False" />
+            <line number="8" hits="146" branch="False" />
+            <line number="9" hits="140" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Models.StockRequest" filename="Models\StockRequest.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_Nombre" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="3" hits="320" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="3" hits="320" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Logica.StockValidator" filename="Logica\StockValidator.cs" line-rate="1" branch-rate="1" complexity="6">
+          <methods>
+            <method name="Validar" signature="(InventarioApi.Models.StockRequest)" line-rate="1" branch-rate="1" complexity="6">
+              <lines>
+                <line number="10" hits="42" branch="False" />
+                <line number="11" hits="42" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="100%" />
+                    <condition number="30" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="12" hits="6" branch="False" />
+                <line number="14" hits="36" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="57" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="15" hits="3" branch="False" />
+                <line number="17" hits="33" branch="False" />
+                <line number="18" hits="42" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="42" branch="False" />
+            <line number="11" hits="42" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="12" type="jump" coverage="100%" />
+                <condition number="30" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="12" hits="6" branch="False" />
+            <line number="14" hits="36" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="57" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="15" hits="3" branch="False" />
+            <line number="17" hits="33" branch="False" />
+            <line number="18" hits="42" branch="False" />
+          </lines>
+        </class>
+        <class name="InventarioApi.Logica.StockValidator/Resultado" filename="Logica\StockValidator.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_EsValida" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="96" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="96" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

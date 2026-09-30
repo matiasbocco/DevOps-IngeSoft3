@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <Exclude>[InventarioApi]Program,[InventarioApi]InventarioApi.Migrations.*</Exclude>
   </PropertyGroup>
 
   <ItemGroup>
