@@ -51,7 +51,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -sourcedirs:backend \
+          reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -sourcedirs:backend \
             -targetdir:coveragereport "-reporttypes:Html;MarkdownSummaryGithub"
           cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 

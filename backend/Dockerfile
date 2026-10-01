@@ -14,8 +14,8 @@ RUN dotnet publish backend/InventarioApi.csproj -c Release -o /app/publish
 # Test stage
 FROM build AS test
 ENTRYPOINT ["dotnet", "test", "backend.tests/InventarioApi.Tests.csproj", \
-            "--collect:XPlat Code Coverage", \
             "/p:CollectCoverage=true", "/p:Threshold=95", "/p:ThresholdType=line", \
+            "/p:CoverletOutputFormat=cobertura", "/p:CoverletOutput=/out/", \
             "/p:Exclude=[InventarioApi]Program%2c[InventarioApi]InventarioApi.Migrations.*", \
             "--logger", "trx;LogFileName=tests.trx", "--results-directory", "/out"]
 
