@@ -169,3 +169,51 @@ Usé Claude para guiarme paso a paso por la escritura del workflow (los dos jobs
 separado, el gate en branch protection), por si no entiendia la explicacion del repo del TP, entonces trabajaba con ambos en paralelo para asegurarme. Y para diagnosticar los errores que fueron apareciendo
 (el YAML roto por el editor web, el conflicto del README). 
 Verifiqué y realicé cada paso yo mismo: corrí el `docker build` local antes de subir el código roto, confirmé visualmente el bloqueo del merge en GitHub, y confirmé el porcentaje de cache reutilizado en la segunda corrida.
+
+
+## TP5 — Testing y Calidad
+
+### Umbral elegido y por qué
+
+**Backend: 95%** con coverlet.msbuild. Lo dejé alto porque después del refactor la lógica real,
+antes escondida en Program.cs, quedó chica y bien testeada — mi cobertura real mide 100% sobre
+esas clases. Si agrego lógica nueva sin testear, el número baja del 95% enseguida y me entero.
+
+**Frontend: 70%** líneas/branch con vitest/v8. Acá lo puse más bajo a propósito: mi medición real
+dio 95.57%/88.88%, pero dejé margen porque el frontend es mayormente UI, componentes React con
+bastantes callbacks de JSX que no vale la pena perseguir al 100%. No le puse umbral a functions
+por el mismo motivo.
+
+### Qué excluí de la cuenta
+
+**Backend:** Program.cs, que contiene solo el cableado de DI y rutas sin reglas de negocio, y las
+migraciones de EF Core — con [ExcludeFromCodeCoverage] y /p:Exclude.
+
+**Frontend:** src/main.tsx, el bootstrap de la app, y los archivos de test, vía include/exclude
+en vite.config.ts.
+
+### Rama sin cubrir (branch coverage)
+
+ItemList.tsx línea 19 arma la URL con un ternario: categoria ? url-con-query : url-simple. Es
+un if/else con otra sintaxis — dos caminos posibles. Los tests existentes siempre renderizaban con
+categoria="", así que solo se ejecutaba el camino sin categoría; el del filtro nunca se probó,
+por eso el reporte lo marcaba naranja. La entrada que lo recorre es renderizar con
+categoria="Perifericos" y chequear que el fetch se llama con /api/items?categoria=Perifericos.
+Lo agregué porque es barato y cubre el filtro por categoría, que el usuario realmente usa.
+
+### Problemas encontrados y cómo los resolví
+
+- **package-lock.json desincronizado:** después de agregar @vitest/coverage-v8 al
+  package.json a mano, npm ci fallaba en Docker/CI. Se arregla corriendo npm install
+  localmente y commiteando el lockfile actualizado.
+
+- **EBUSY: resource busy or locked, rmdir /app/coverage en CI:** vitest borra y recrea la
+  carpeta coverage/ antes de cada corrida, pero en Docker esa carpeta es el punto de montaje del
+  volumen y no se puede borrar un mountpoint desde adentro. Se soluciona con clean: false en la
+  config de coverage de vite.config.ts.
+
+### Declaración de uso de IA
+
+El refactor de StockValidator, StockService y validarStockForm, junto con los tests, los armó
+Claude Code bajo instrucciones mías; yo revisé cada diff antes de aplicarlo y confirmé en GitHub que
+los checks quedaban en verde antes de mergear cada PR.
