@@ -1,4 +1,5 @@
 import { useState, FormEvent } from 'react'
+import { validarStockForm } from '../lib/stockForm'
 
 interface Props {
   onSuccess: () => void
@@ -29,6 +30,12 @@ export default function StockForm({ onSuccess }: Props) {
     e.preventDefault()
     setStatus(null)
     setError(null)
+
+    const validacion = validarStockForm(form)
+    if (!validacion.valido) {
+      setError(validacion.error ?? 'Formulario inválido.')
+      return
+    }
 
     const body = {
       nombre: form.nombre,
