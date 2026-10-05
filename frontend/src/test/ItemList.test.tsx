@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import ItemList from '../components/ItemList'
 import { Item } from '../types'
 
@@ -14,6 +14,10 @@ describe('ItemList', () => {
       ok: true,
       json: async () => mockItems,
     } as Response)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('renders a list of items', async () => {
