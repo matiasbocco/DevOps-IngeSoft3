@@ -37,4 +37,12 @@ describe('ItemList', () => {
     expect(screen.getByText('Ubicación')).toBeInTheDocument()
     expect(screen.getByText('Categoría')).toBeInTheDocument()
   })
+
+  it('arma la URL con el query param de categoría cuando categoria tiene valor', async () => {
+    render(<ItemList categoria="Perifericos" refreshKey={0} />)
+
+    await screen.findByText('Teclado')
+
+    expect(fetch).toHaveBeenCalledWith('/api/items?categoria=Perifericos')
+  })
 })
