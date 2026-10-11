@@ -1,0 +1,43 @@
+# Entorno PROD (plan C: lo levanta el job deploy-prod, después de la aprobación).
+# `name:` aísla el proyecto: sin él, el deploy de PROD recrearía los contenedores de QA.
+name: prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: inventario
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .                      # el Dockerfile copia backend/ y backend.tests/
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: "Host=db;Database=inventario;Username=postgres;Password=${POSTGRES_PASSWORD}"
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8080   # cada proyecto tiene su propio "backend" en su red
+      DNS_RESOLVER: 127.0.0.11
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data_prod:
