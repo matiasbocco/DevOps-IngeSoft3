@@ -1,3 +1,5 @@
+using InventarioApi;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -6,6 +8,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InventarioApi.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20240101000000_InitialCreate")]
     public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
