@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
@@ -15,6 +16,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    exclude: [...configDefaults.exclude, 'e2e/**'],   // los specs de Playwright no son de vitest
     coverage: {
       provider: 'v8',
       clean: false,

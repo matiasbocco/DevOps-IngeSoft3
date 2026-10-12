@@ -67,7 +67,9 @@ export default function ItemList({ categoria, refreshKey }: Props) {
             <td>{item.ubicacion}</td>
             <td>{item.categoria}</td>
             <td>
-              <button onClick={() => handleDelete(item.id)}>Eliminar</button>
+              <button onClick={() => handleDelete(item.id)} aria-label={`Eliminar ${item.nombre}`}>
+                Eliminar
+              </button>
             </td>
           </tr>
         ))}

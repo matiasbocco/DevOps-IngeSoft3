@@ -135,9 +135,9 @@ jobs:
           cache-to: type=gha,mode=max,scope=frontend
 
   # --- Entrega continua (plan C: self-hosted runner + docker compose) -------------------
-  # needs + if encadenan la promoción: sin CI verde no hay deploy, y los PRs verifican
-  # pero no despliegan. El runner hace checkout del commit de ESTA corrida, así que se
-  # despliega el commit verificado y no la punta de la rama.
+  # Cadena: build → deploy-qa → integracion → e2e → [aprobación] → deploy-prod.
+  # QA y PROD EJECUTAN la imagen sha-<commit> que publicaron los jobs de build: nada se
+  # reconstruye en el servidor, así que lo que se prueba en QA es lo que llega a PROD.
   deploy-qa:
     runs-on: self-hosted
     needs: [build-backend, build-frontend]
@@ -147,12 +147,16 @@ jobs:
       contents: read
     env:
       POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      IMAGE_TAG: sha-${{ github.sha }}
     steps:
-      - name: Bajar el código del commit verificado
+      - name: Bajar los compose del commit verificado
         uses: actions/checkout@v6
 
-      - name: Levantar QA
-        run: docker compose -f compose.qa.yml up -d --build
+      - name: Deploy QA con la imagen del registry
+        run: |
+          echo "Imagen a desplegar: $IMAGE_TAG"
+          docker compose -f compose.qa.yml pull
+          docker compose -f compose.qa.yml up -d
 
       - name: Smoke test de QA (con reintentos)
         shell: bash
@@ -162,8 +166,6 @@ jobs:
         run: |
           echo "Esperando a que QA esté vivo..."
           for i in $(seq 1 30); do
-            # /health: proceso vivo · /api/items: la BD responde ·
-            # front/: nginx sirve · front/api/items: nginx llega al backend por BACKEND_URL
             if curl -fsS --max-time 10 "$URL_API/health" \
                && curl -fsS --max-time 10 "$URL_API/api/items" > /dev/null \
                && curl -fsS --max-time 10 "$URL_FRONT/" > /dev/null \
@@ -175,22 +177,87 @@ jobs:
           done
           echo "❌ QA no respondió a tiempo"; exit 1
 
-  # No repite el if de rama: depende de deploy-qa, que ya lo tiene, así que en un PR
-  # ninguno de los dos corre. El job queda pausado hasta que un reviewer apruebe.
-  deploy-prod:
+  # Integración amplia: pedidos HTTP directo a la api de QA, con su Postgres de verdad.
+  # Corre dentro de la imagen oficial de Playwright (Node + navegadores ya instalados) con
+  # --network host para llegar a localhost:8080 del servidor, y como el usuario del runner
+  # para que los archivos generados se puedan limpiar en la próxima corrida.
+  integracion:
     runs-on: self-hosted
     needs: deploy-qa
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Integración contra la api de QA
+        shell: bash
+        run: |
+          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            -e CI=true -e API_BASE_URL=http://localhost:8080 \
+            -v "$GITHUB_WORKSPACE/frontend:/work" -w /work \
+            mcr.microsoft.com/playwright:v1.64.0-noble \
+            bash -c "npm ci && npx playwright test e2e/api.spec.js"
+
+      - name: Publicar reporte de integración
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-integracion
+          path: frontend/playwright-report
+          retention-days: 7
+
+  # e2e: un navegador real usa la app completa de QA (front → nginx → api → base).
+  # Si la integración falla, ni se gasta un navegador en confirmarlo.
+  e2e:
+    runs-on: self-hosted
+    needs: integracion
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: e2e contra QA
+        shell: bash
+        run: |
+          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            -e CI=true -e E2E_BASE_URL=http://localhost:3000 \
+            -v "$GITHUB_WORKSPACE/frontend:/work" -w /work \
+            mcr.microsoft.com/playwright:v1.64.0-noble \
+            bash -c "npm ci && npx playwright test e2e/inventario.spec.js"
+
+      - name: Publicar reporte e2e
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-e2e
+          path: frontend/playwright-report
+          retention-days: 7
+
+  # EL gate: sin e2e verde ni siquiera se pide aprobación. No repite el if de rama: lo
+  # hereda por la cadena. Despliega la MISMA imagen sha-<commit> que verificaron QA y las suites.
+  deploy-prod:
+    runs-on: self-hosted
+    needs: e2e
     environment: production
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
     permissions:
       contents: read
     env:
       POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      IMAGE_TAG: sha-${{ github.sha }}
     steps:
-      - name: Bajar el código del commit verificado
+      - name: Bajar los compose del commit verificado
         uses: actions/checkout@v6
 
-      - name: Levantar PROD
-        run: docker compose -f compose.prod.yml up -d --build
+      - name: Deploy PROD con la MISMA imagen que QA
+        run: |
+          echo "Imagen a desplegar: $IMAGE_TAG"
+          docker compose -f compose.prod.yml pull
+          docker compose -f compose.prod.yml up -d
 
       - name: Smoke test de PROD (con reintentos)
         shell: bash
