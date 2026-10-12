@@ -292,6 +292,13 @@ Para producción real usaría blue-green: el rollback es instantáneo y el doble
 no es caro para una app chica. Me falta monitoreo de errores y latencia para saber cuándo volver atrás. Mi rollback hoy: re-run del `deploy-prod` de la última corrida
 buena y aprobarlo.
 
+Lo medí volviendo PROD de `ceb47f8` (PR #30) a `960d26e` (PR #28) con *Re-run all jobs* de
+https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996: empezó a las 18:13:01 y
+`deploy-prod` terminó en verde a las 18:15:29 (12/10/2026), o sea **2 min 28 s**. De eso, el
+`deploy-prod` en sí tardó 13 s y ~27 s fueron la espera de mi aprobación; el resto fue volver a
+correr builds y QA (re-ejecutando solo `deploy-prod` sería menos de un minuto). El rollback de
+código no deshace los datos que ya escribió la versión nueva.
+
 ### Problemas
 - El servidor no llegaba a la CDN de GitHub: bajé el runner en mi notebook y lo pasé con `scp`.
 - `DB_PASSWORD` no estaba donde el job lo leía y Postgres no arrancaba.
