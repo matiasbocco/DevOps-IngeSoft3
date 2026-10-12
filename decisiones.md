@@ -1,3 +1,17 @@
+# Enlaces de este TP
+
+**Paquetes (públicos, `docker pull` sin login):**
+- `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413`
+- `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-960d26e36182a0b8dde422e65f555508c264f413`
+
+**Cadena:**
+- PR con tests en verde y «Entrar al registry» salteado: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169151145/job/114557884843
+- Corrida de `main` con publicar como último paso: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996/job/114558901439
+
+**Entornos** (red interna de Fulgor):
+- QA: http://172.16.0.110:3000 (API :8080)
+- PROD: http://172.16.0.110:3001 (API :8081)
+
 # Decisiones — TP1
 
 ## 1. Por qué Git no pudo resolver el conflicto solo
@@ -225,24 +239,13 @@ los checks quedaban en verde antes de mergear cada PR.
 
 ## TP6 — Entrega continua: environments, aprobaciones y deployment patterns
 
-# Enlaces de este TP
-
-**Paquetes (públicos, `docker pull` sin login):**
-- `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413`
-- `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-960d26e36182a0b8dde422e65f555508c264f413`
-
-**Cadena:**
-- PR con tests en verde y «Entrar al registry» salteado: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169151145/job/114557884843
-- Corrida de `main` con publicar como último paso: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996/job/114558901439
-
-**Entornos** (red interna de Fulgor):
-- QA: http://172.16.0.110:3000 (API :8080)
-- PROD: http://172.16.0.110:3001 (API :8081)
-
 ### Dónde despliego: plan C (self-hosted runner + docker compose)
 Elegí correr QA y PROD en Torvalds (172.16.0.110), un servidor de la red de mi trabajo que me prestaron
 para este proyecto, en vez de Render/Neon. Es lo que voy a tener que hacer con proyectos reales
 del trabajo, y ya tengo otro proyecto personal en Railway: preferí el camino más difícil pero más útil.
+Cumplo los cinco puntos del contrato: dos entornos con sus puertos (QA 8080/3000, PROD 8081/3001), una base
+por entorno (volúmenes separados: un item creado solo en PROD no aparece en QA), contenedores de mis
+Dockerfiles, deploy disparado por Actions y PROD detrás de la aprobación.
 
 
 ### Por qué se publica solo con verde
@@ -275,13 +278,18 @@ o SSH por puertos expuestos a internet.
 No uso Render, pero pasa lo mismo: el deploy hace `docker compose up --build` y reconstruye desde
 el commit. Despliego el mismo commit, no la misma imagen que pasó los tests.
 
+### Qué va por variable y qué en la imagen
+Por variable: `BACKEND_URL` y `DNS_RESOLVER` del front (nginx los lee al arrancar), `DATABASE_URL`
+y la password. En la imagen: el código, el build del front y la plantilla de nginx. Por eso la
+misma imagen del front sirve en QA y en PROD.
+
 ### Qué prueba el smoke y qué no
 Reintenta 30 veces cada 20 s contra `/health`, `/api/items` (que toca la base) y el front. Prueba
 que la app responde, pero no qué versión está corriendo.
 
 ### Pattern y rollback
 Para producción real usaría blue-green: el rollback es instantáneo y el doble de infraestructura
-no es caro para una app chica. Mi rollback hoy: re-run del `deploy-prod` de la última corrida
+no es caro para una app chica. Me falta monitoreo de errores y latencia para saber cuándo volver atrás. Mi rollback hoy: re-run del `deploy-prod` de la última corrida
 buena y aprobarlo.
 
 ### Problemas
