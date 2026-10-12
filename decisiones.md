@@ -1,15 +1,3 @@
-# Enlaces de este TP
-
-- **Paquetes públicos** (etiquetados con el commit de un merge; `docker pull` sin credenciales):
-  - Backend: `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413` (digest `sha256:e9525f08fc9273df4e3ce71dabecc60d2c5b5e9e47416668d521b8905989aff8`) · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-backend
-  - Frontend: `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-960d26e36182a0b8dde422e65f555508c264f413` (digest `sha256:48a67cd783853160d8c9cf3612d3376bb12c2db4645d80789f07fe1c54930628`) · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-frontend
-- **La cadena** (Tarea 1):
-  - Corrida de un PR con tests en verde, job que publica, «Entrar al registry» salteado (PR #28): https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169151145/job/114557884843
-  - Lista de pasos de una corrida de `main`, con «Construir y publicar la imagen» como último paso: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996/job/114558901439
-- **Entornos** (plan C, ver sección TP6): QA http://172.16.0.110:3000 (front) y http://172.16.0.110:8080 (API) · PROD http://172.16.0.110:3001 (front) y http://172.16.0.110:8081 (API). Corren en un servidor de Fulgor (red interna), levantados por el self-hosted runner; se navegan en vivo en la defensa.
-
----
-
 # Decisiones — TP1
 
 ## 1. Por qué Git no pudo resolver el conflicto solo
@@ -231,121 +219,83 @@ Claude Code bajo instrucciones mías; yo revisé cada diff antes de aplicarlo y 
 los checks quedaban en verde antes de mergear cada PR.
 
 
+
+
+
+
 ## TP6 — Entrega continua: environments, aprobaciones y deployment patterns
 
-> BORRADOR. Las secciones marcadas con TODO-MATIAS las tengo que escribir yo con mis palabras
-> y con lo que vi en mis corridas; el resto es una base para revisar, no para copiar sin entender.
+# Enlaces de este TP
 
-### Por qué el artefacto se publica sólo con la verificación en verde
+**Paquetes (públicos, `docker pull` sin login):**
+- `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413`
+- `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-960d26e36182a0b8dde422e65f555508c264f413`
 
-Una imagen en el registry tiene que querer decir «esto pasó la verificación». Si el pipeline
-publicara igual cuando los tests fallan, estar publicado dejaría de significar algo y el registry
-sería un depósito de cosas que alguien construyó alguna vez. La garantía sale de encadenar tres
-cosas que ya existían, sin ningún control nuevo:
+**Cadena:**
+- PR con tests en verde y «Entrar al registry» salteado: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169151145/job/114557884843
+- Corrida de `main` con publicar como último paso: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996/job/114558901439
 
-1. Nada entra a `main` sin el pipeline en verde (gate del TP4 + umbral de cobertura del TP5).
-2. Sólo `main` publica: el `push:` del build final es `github.event_name == 'push' && github.ref == 'refs/heads/main'`, y el login al registry sólo corre en `push`.
-3. Publicar es el **último paso** del mismo job que corre los tests: los steps corren en orden y
-   se cortan en el primer error, así que si los tests fallan ese paso nunca llega a correr.
+**Entornos** (red interna de Fulgor):
+- QA: http://172.16.0.110:3000 (API :8080)
+- PROD: http://172.16.0.110:3001 (API :8081)
 
-Lo que **no** garantiza: un `docker push` hecho a mano desde mi notebook entra igual al registry.
-La cadena garantiza lo que publica el pipeline, no lo que físicamente puede entrar. Una garantía más
-fuerte sería desplegar por *digest* (`@sha256:…`), que identifica el contenido y no una etiqueta.
+### Dónde despliego: plan C (self-hosted runner + docker compose)
+Elegí correr QA y PROD en Torvalds (172.16.0.110), un servidor de la red de mi trabajo que me prestaron
+para este proyecto, en vez de Render/Neon. Es lo que voy a tener que hacer con proyectos reales
+del trabajo, y ya tengo otro proyecto personal en Railway: preferí el camino más difícil pero más útil.
 
-### Continuous Delivery vs Continuous Deployment
 
-Implementé **Continuous Delivery**: cada cambio verificado llega solo a QA, pero PROD espera una
-aprobación humana en el environment `production`. Continuous Deployment sacaría ese humano y haría
-que todo lo que pasa los tests llegue solo a producción; eso exige una red de seguridad (tests,
-monitoreo, rollback rápido) que esta app todavía no tiene. TODO-MATIAS: decir si la querría y qué me faltaría.
+### Por qué se publica solo con verde
+Si publicara con tests en rojo, el registry dejaría de significar esto pasó la verificación.
+Lo garantizan tres cosas juntas: nada entra a `main` sin verde, solo `main` publica, y publicar
+es el último paso del job que testea. Un `docker push` a mano sí podría entrar igual.
 
-### Diseño de la cadena y alcance de los secrets
+### Delivery vs Deployment
+Implementé Continuous Delivery: QA se despliega solo y PROD espera mi aprobación. No hice
+Deployment porque mi smoke solo verifica que la app responde; me faltarían tests end-to-end
+y monitoreo.
 
-`deploy-qa` tiene `needs: [build-backend, build-frontend]` e `if: github.ref == 'refs/heads/main'`:
-sin CI verde no hay deploy, y los PRs verifican pero no despliegan. `deploy-prod` tiene
-`needs: deploy-qa` y **no repite** el `if` de rama: lo hereda por la cadena, porque si `deploy-qa`
-no corre (un PR), `deploy-prod` tampoco. Cada deploy declara su `environment` (`qa` /
-`production`), que le da secrets, historial de Deployments y reglas de protección.
+### Cadena y secrets
+`deploy-qa` tiene `needs` de los dos builds e `if` de rama `main`, así que los PRs no despliegan.
+`deploy-prod` tiene `needs: deploy-qa`, hereda esa condición y usa el environment `production`
+con aprobación. `DB_PASSWORD` es secret de repo porque lo usan los dos entornos; algo solo de
+PROD iría en el environment `production`, para que otro job no lo pueda leer.
 
-El secret `DB_PASSWORD` (password de las bases locales) vive en TODO-MATIAS: indicar si lo guardé en
-el repo o en cada environment, y qué pasaría si el de PROD estuviera en el repo (cualquier job, incluso
-uno de QA o de un PR, podría leerlo). El `GITHUB_TOKEN` del publicado dura lo que el job y se declara con
-`permissions:` **dentro de cada job** (mínimo privilegio), no a nivel del workflow.
+### Qué miro antes de aprobar
+Que QA esté en verde, que el smoke haya pasado, qué cambia el diff y que sea el mismo commit que
+pasó por QA. Rechacé este deploy: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38277376420
 
-### Qué mira mi aprobador antes de aprobar
+### Letra chica de mi infraestructura
+No uso free tier: es un servidor de Fulgor con self-hosted runner, así que no hay cold start,
+sleep ni límite de horas o minutos de build. La contra es que si el servidor o el runner están
+caídos no hay deploy, y las URLs solo se ven dentro de la red de Fulgor, que yo puedo acceder remoto via VPN 
+o SSH por puertos expuestos a internet.
 
-TODO-MATIAS: escribir mis criterios reales (qué miro en la corrida: QA verde, smoke que pasó, qué
-cambia el commit, si el sha coincide con el de QA...) y qué NO puedo ver desde el gate.
+### Qué garantía pierdo al reconstruir
+No uso Render, pero pasa lo mismo: el deploy hace `docker compose up --build` y reconstruye desde
+el commit. Despliego el mismo commit, no la misma imagen que pasó los tests.
 
-### Rechazo documentado
+### Qué prueba el smoke y qué no
+Reintenta 30 veces cada 20 s contra `/health`, `/api/items` (que toca la base) y el front. Prueba
+que la app responde, pero no qué versión está corriendo.
 
-TODO-MATIAS: enlazar el run rechazado y escribir el motivo propio y específico (qué vi en esa
-corrida), no un ejemplo genérico.
+### Pattern y rollback
+Para producción real usaría blue-green: el rollback es instantáneo y el doble de infraestructura
+no es caro para una app chica. Mi rollback hoy: re-run del `deploy-prod` de la última corrida
+buena y aprobarlo.
 
-### Plan C: por qué local y qué pierdo
+### Problemas
+- El servidor no llegaba a la CDN de GitHub: bajé el runner en mi notebook y lo pasé con `scp`.
+- `DB_PASSWORD` no estaba donde el job lo leía y Postgres no arrancaba.
+- La migración no tenía los atributos de EF y `/api/items` daba 500: los agregué y sumé un test.
 
-Usé el fallback de la materia: **self-hosted runner + docker compose** como entornos QA y PROD
-(`compose.qa.yml` y `compose.prod.yml`) en un servidor de Fulgor (172.16.0.110), en lugar de Render/Neon. TODO-MATIAS: contar el motivo real de la decisión.
+### Uso de IA
+Usé Claude principalmente como guía para conectar GitHub con la red de Fulgor: entrar al servidor
+por el salto SSH con llaves, crear el usuario del runner, instalarlo como servicio y resolver que el
+servidor no llegaba a la CDN de GitHub. También me ayudo con el `ci.yml` de publicación y deploy,
+los compose de QA/PROD, la plantilla de nginx, el arreglo de la migración con su test, revisando que este
+todo en orden y me ayudó a diagnosticar los errores del deploy.
 
-Cumplo el mismo contrato: (1) dos entornos separados y simultáneos, cada uno con su proyecto de
-Compose (`name: qa` / `name: prod`), sus puertos (8080/3000 y 8081/3001) y su volumen de Postgres
-(`db_data_qa` / `db_data_prod`), de modo que son bases distintas; (2) front y back corren como contenedores
-construidos con mis Dockerfiles; (3) el deploy lo dispara **una corrida de Actions** en el runner, no yo con
-`docker compose up` a mano; (4) PROD está detrás del environment `production` con required reviewer.
-Sin `name:` distinto el deploy de PROD recrearía los contenedores de QA.
-
-Lo comprobé creando un item sólo en PROD (`POST :8081/api/items/stock`): aparece al listar PROD y la lista de QA,
-consultada a través de su front (`:3000/api/items`), sigue vacía. Eso prueba a la vez que las bases son distintas y que
-el nginx de cada entorno habla con **su** backend.
-
-Lo que pierdo respecto de la nube: no hay URLs públicas, las URLs sólo se alcanzan desde la red interna de Fulgor, y
-si el servidor o el runner están caídos no hay deploys ni entornos, y no existe el cold start real que obliga a
-diseñar reintentos contra infra ajena. En compensación no hay horas de instancia ni minutos de build que
-presupuestar. Seguridad del runner: GitHub desaconseja runners propios en repos públicos porque un PR de un
-fork podría ejecutar código en el servidor; lo mitigo con *Require approval for all external contributors*
-y sin aceptar PRs de desconocidos. TODO-MATIAS: aclarar qué autorización de Fulgor tengo para usar ese servidor.
-
-### Qué garantía pierdo porque se reconstruye desde el checkout
-
-El job hace `docker compose up -d --build`: construye otra vez la imagen desde el commit que baja
-`actions/checkout`, en lugar de ejecutar la imagen que publiqué en ghcr. Despliego **el mismo commit** que se
-verificó (el checkout es el de la corrida, no la punta de la rama), pero no **la misma imagen**: una dependencia
-o una imagen base que cambie entre un build y el otro podría producir algo distinto. Es el problema que el TP7 cierra.
-
-### Qué quedó por variable y qué dentro de la imagen
-
-Por variable de entorno: `BACKEND_URL` y `DNS_RESOLVER` del front (nginx las lee al arrancar desde la plantilla
-`default.conf.template`), `DATABASE_URL` y la password de la base. Dentro de la imagen: el código, el `dist/`
-de Vite y la plantilla de nginx con sus valores por defecto de Compose. Por eso **la misma imagen del front**
-sirve en QA y en PROD y cada una habla con su api.
-
-### Qué prueba el smoke test y qué no
-
-Reintenta 30 veces cada 20 s (con `--max-time` en cada `curl`) porque el entorno puede tardar en arrancar. Verifica
-`/health` (proceso vivo), `/api/items` (la BD responde: un `/health` que no toca la base da verde con la
-conexión rota), el front en `/` y `/api/items` **a través del front** (prueba que nginx llega al backend por
-`BACKEND_URL`). Lo que **no** dice es qué versión está corriendo: contesta, pero un deploy cuyo build falló y deja
-la versión anterior en pie también da verde. Una mejora sería que `/health` devuelva el commit y el smoke lo compare con `github.sha`.
-
-### Deployment pattern para una producción real, y rollback
-
-TODO-MATIAS: elegir patrón (blue-green / canary / rolling / flags) y justificar por costo, riesgo, rollback y la
-observabilidad que me falta hoy.
-
-**Rollback actual**: TODO-MATIAS: pasos reales y **tiempo medido** (hora de inicio y de fin del redeploy del
-commit anterior, tomadas de Actions/Deployments). Hacerlo una vez de verdad; un «unos minutos» no cuenta.
-Recordar qué NO deshace un rollback de código: los datos que ya escribió la versión nueva.
-
-### Problemas encontrados y cómo los resolví
-
-- `${{ github.repository }}` en el tag falla con *repository name must be lowercase* porque el repo se llama
-  `DevOps-IngeSoft3`: escribí el nombre del paquete a mano en minúsculas.
-- El `Dockerfile` del backend copia `backend/` y `backend.tests/`, así que necesita el repo como contexto de build
-  (`context: .`); el `docker-compose.yml` heredado del TP2 tenía `build: ./backend` y ya no construía. Lo corregí.
-- La guía usa `/api/tareas` para el smoke, que es de la app de la cátedra; mi app expone `/api/items`.
-- TODO-MATIAS: agregar los problemas reales que me aparezcan (runner, permisos, aprobación, etc.).
-
-### Declaración de uso de IA
-
-TODO-MATIAS: declarar qué parte fue asistida por IA (workflow de deploy, compose, plantilla de nginx, este borrador) y
-cómo lo verifiqué. Tengo que poder explicar qué pasa exactamente entre el merge y PROD: cada compuerta, cada secret, cada espera.
+Los comandos en el servidor y la configuración en GitHub (environments, secret, runner, paquetes
+públicos) los hice yo. Lo verifiqué corriendo el pipeline de punta a punta, aprobando y rechazando
+deploys, haciendo `docker pull` sin login y comprobando que un dato creado en PROD no aparece en QA.
