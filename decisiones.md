@@ -1,13 +1,11 @@
 # Enlaces de este TP
 
-> BORRADOR: completar los TODO-MATIAS con los links reales después del merge.
-
 - **Paquetes públicos** (etiquetados con el commit de un merge; `docker pull` sin credenciales):
-  - Backend: TODO-MATIAS `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-<commit>` · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-backend
-  - Frontend: TODO-MATIAS `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-<commit>` · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-frontend
+  - Backend: `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413` (digest `sha256:e9525f08fc9273df4e3ce71dabecc60d2c5b5e9e47416668d521b8905989aff8`) · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-backend
+  - Frontend: `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-960d26e36182a0b8dde422e65f555508c264f413` (digest `sha256:48a67cd783853160d8c9cf3612d3376bb12c2db4645d80789f07fe1c54930628`) · https://github.com/matiasbocco/DevOps-IngeSoft3/pkgs/container/devops-ingesoft3-frontend
 - **La cadena** (Tarea 1):
-  - Corrida de un PR con tests en verde, job que publica, «Entrar al registry» salteado: TODO-MATIAS link al run
-  - Lista de pasos de una corrida de `main`, con «Construir y publicar la imagen» como último paso: TODO-MATIAS link al run
+  - Corrida de un PR con tests en verde, job que publica, «Entrar al registry» salteado (PR #28): https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169151145/job/114557884843
+  - Lista de pasos de una corrida de `main`, con «Construir y publicar la imagen» como último paso: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38169490996/job/114558901439
 - **Entornos** (plan C, ver sección TP6): QA http://172.16.0.110:3000 (front) y http://172.16.0.110:8080 (API) · PROD http://172.16.0.110:3001 (front) y http://172.16.0.110:8081 (API). Corren en un servidor de Fulgor (red interna), levantados por el self-hosted runner; se navegan en vivo en la defensa.
 
 ---
@@ -295,6 +293,10 @@ Compose (`name: qa` / `name: prod`), sus puertos (8080/3000 y 8081/3001) y su vo
 construidos con mis Dockerfiles; (3) el deploy lo dispara **una corrida de Actions** en el runner, no yo con
 `docker compose up` a mano; (4) PROD está detrás del environment `production` con required reviewer.
 Sin `name:` distinto el deploy de PROD recrearía los contenedores de QA.
+
+Lo comprobé creando un item sólo en PROD (`POST :8081/api/items/stock`): aparece al listar PROD y la lista de QA,
+consultada a través de su front (`:3000/api/items`), sigue vacía. Eso prueba a la vez que las bases son distintas y que
+el nginx de cada entorno habla con **su** backend.
 
 Lo que pierdo respecto de la nube: no hay URLs públicas, las URLs sólo se alcanzan desde la red interna de Fulgor, y
 si el servidor o el runner están caídos no hay deploys ni entornos, y no existe el cold start real que obliga a
