@@ -1,4 +1,19 @@
-# Enlaces de este TP
+# Enlaces del TP7
+
+**Paquetes (públicos), con la imagen que está en PROD:**
+- `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-f4b7c8bd2244d7c9d87043ba6343638eee3d057b`
+- `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-f4b7c8bd2244d7c9d87043ba6343638eee3d057b`
+
+**Integración verde + e2e roja frenando la promoción:**
+- Commit que rompió la app (el front llama a `/api/item/{id}` al eliminar): https://github.com/matiasbocco/DevOps-IngeSoft3/commit/2bc5aa3e7c027b47094e21d4a0747900f0fd1f89
+- Corrida: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38492894433
+- Reportes (`playwright-report-integracion` en verde y `playwright-report-e2e` en rojo): https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38492894433#artifacts
+
+**Corrida completa en verde hasta PROD (después del arreglo):** https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38494616017
+
+**Entornos** (red interna de Fulgor): QA http://172.16.0.110:3000 (API :8080) · PROD http://172.16.0.110:3001 (API :8081)
+
+# Enlaces del TP6
 
 **Paquetes (públicos, `docker pull` sin login):**
 - `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413`
@@ -314,3 +329,50 @@ todo en orden y me ayudó a diagnosticar los errores del deploy.
 Los comandos en el servidor y la configuración en GitHub (environments, secret, runner, paquetes
 públicos) los hice yo. Lo verifiqué corriendo el pipeline de punta a punta, aprobando y rechazando
 deploys, haciendo `docker pull` sin login y comprobando que un dato creado en PROD no aparece en QA.
+
+## TP7 — Contenedores en el pipeline + integración y e2e
+
+### Build once, deploy many
+En el TP6 el servidor reconstruía la imagen (`compose up --build`), así que PROD no era lo que se probó.
+Ahora los compose usan `image: ghcr.io/...:${IMAGE_TAG}` y QA, las pruebas y PROD corren la misma imagen.
+
+### Etiquetas
+`sha-<commit>` identifica la imagen de un build verificado; `v7.0.0` nombra la versión en PROD. No uso
+`latest` porque se mueve y no dice qué corre. Del tag a la imagen: `git rev-list -n1 v7.0.0` → `sha-<ese commit>`.
+
+### Cómo sé que corre la imagen
+El log del deploy muestra el `pull` del `sha-<commit>` de la corrida. El smoke no lo prueba: solo pregunta
+si responde.
+
+### Pruebas
+Integración (api de QA, sin navegador): alta y borrado, nombre vacío da 400, y registrar stock suma.
+e2e (navegador contra QA): crear y eliminar, error con nombre en blanco, y cargar stock dos veces suma.
+Elegí la suma de stock porque es lo que el usuario hace todos los días. Las validaciones finas quedan en los
+unitarios del TP5: arriba de la pirámide van pocas pruebas.
+
+### Diagnóstico de la rotura
+Hice que el front elimine con `/api/item/{id}`. Integración verde (la api y la base andan) y e2e roja (el
+front no borra; la traza muestra el 404): el problema está en el front. `deploy-prod` ni pidió aprobación.
+
+### Integración amplia
+Pruebo contra la api de QA ya desplegada: gano probar la imagen y la base reales con poca configuración;
+pierdo que corre después del deploy y que QA es compartido.
+
+### Tiempos y flaky
+No hay cold start (servidor siempre prendido). Igual: 15 s por aserción, 60 s por test y 1 retry. Flaky es
+un test que pasa recién en el retry sin cambios en el código.
+
+### Misma imagen del front
+nginx lee `BACKEND_URL` al arrancar; la URL de la api no está dentro de la imagen.
+
+### Límite conocido
+QA es uno solo: dos merges seguidos pueden pisarse las pruebas. Mergeo de a uno.
+
+### Problemas
+- El runner no tiene Node ni `sudo`: las suites corren en la imagen oficial de Playwright con `--network host`.
+- Agregué `aria-label` en Eliminar y `role="alert"` en el error para que los tests encuentren los controles.
+- Vitest tomaba los specs de Playwright: los excluí.
+
+### Uso de IA
+Claude me ayudó con los compose, los jobs y las suites de Playwright. Los deploys, aprobaciones y la lectura
+de los reportes los hice y verifiqué yo.
