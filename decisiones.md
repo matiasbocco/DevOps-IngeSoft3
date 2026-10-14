@@ -329,3 +329,27 @@ todo en orden y me ayudó a diagnosticar los errores del deploy.
 Los comandos en el servidor y la configuración en GitHub (environments, secret, runner, paquetes
 públicos) los hice yo. Lo verifiqué corriendo el pipeline de punta a punta, aprobando y rechazando
 deploys, haciendo `docker pull` sin login y comprobando que un dato creado en PROD no aparece en QA.
+
+## TP7 — Contenedores en el pipeline + integración y e2e
+
+### Build once, deploy many
+En el TP6 el deploy hacía `docker compose up --build` en el servidor: QA y PROD eran otra construcción
+del mismo commit, no la imagen que pasó los tests. Si entre los dos builds cambiaba una dependencia o la
+imagen base, PROD podía correr algo que nadie probó. Ahora los compose usan
+`image: ghcr.io/...:${IMAGE_TAG:?falta IMAGE_TAG}` y los deploys hacen `pull` + `up -d` con
+`IMAGE_TAG=sha-<commit>`: QA, las dos suites y PROD usan exactamente la misma imagen.
+
+### Etiquetas
+`sha-<commit>` en el registry identifica la imagen de un build verificado; `v7.0.0` en git nombra la
+versión que llegó a PROD. No publico `latest` porque se mueve de una imagen a otra y no dice qué versión
+corre. Sin `IMAGE_TAG`, compose se niega a arrancar en vez de inventar una etiqueta. No uso Render
+(plan C), así que no hubo servicios viejos que reemplazar.
+
+### De la release a la imagen
+`git rev-list -n1 v7.0.0` da el commit, y la imagen es `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-<ese commit>`
+(lo mismo para el frontend). Un paso.
+
+### Cómo se comprueba que corre la imagen y no un rebuild
+En el log de `deploy-qa` y `deploy-prod` se ve el `pull` del tag `sha-<commit>` de esa corrida, y en el
+servidor `docker compose -f compose.qa.yml images` muestra esa etiqueta. El smoke solo pregunta si la app
+responde: no dice qué imagen está corriendo.
