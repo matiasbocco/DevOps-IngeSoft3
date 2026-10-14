@@ -1,4 +1,19 @@
-# Enlaces de este TP
+# Enlaces del TP7
+
+**Paquetes (públicos), con la imagen que está en PROD:**
+- `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-f4b7c8bd2244d7c9d87043ba6343638eee3d057b`
+- `ghcr.io/matiasbocco/devops-ingesoft3-frontend:sha-f4b7c8bd2244d7c9d87043ba6343638eee3d057b`
+
+**Integración verde + e2e roja frenando la promoción:**
+- Commit que rompió la app (el front llama a `/api/item/{id}` al eliminar): https://github.com/matiasbocco/DevOps-IngeSoft3/commit/2bc5aa3e7c027b47094e21d4a0747900f0fd1f89
+- Corrida: https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38492894433
+- Reportes (`playwright-report-integracion` en verde y `playwright-report-e2e` en rojo): https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38492894433#artifacts
+
+**Corrida completa en verde hasta PROD (después del arreglo):** https://github.com/matiasbocco/DevOps-IngeSoft3/actions/runs/38494616017
+
+**Entornos** (red interna de Fulgor): QA http://172.16.0.110:3000 (API :8080) · PROD http://172.16.0.110:3001 (API :8081)
+
+# Enlaces del TP6
 
 **Paquetes (públicos, `docker pull` sin login):**
 - `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-960d26e36182a0b8dde422e65f555508c264f413`
