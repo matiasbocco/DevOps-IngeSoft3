@@ -391,3 +391,18 @@ imagen quedan el código, el build de Vite y la plantilla. La URL de la api no e
 Si mergeo dos PRs seguidos, la corrida B puede redesplegar QA mientras las pruebas de A siguen corriendo,
 y A probaría la imagen de B. Lo reconocería comparando la hora del `deploy-qa` de B con la de las suites de
 A. Lo que hago es mergear de a uno y esperar que terminen `integracion` y `e2e`; si pasa, rechazo A.
+
+### Problemas
+- El runner no tiene Node ni `sudo` para instalar las dependencias del navegador: las suites corren dentro
+  de la imagen oficial de Playwright (`mcr.microsoft.com/playwright:v1.64.0-noble`) con `--network host`
+  para llegar a `localhost` del servidor.
+- Los botones Eliminar no tenían nombre propio y el error no tenía rol: agregué `aria-label="Eliminar <nombre>"`
+  y `role="alert"` para que los tests encuentren los controles como lo haría un lector de pantalla.
+- Vitest tomaba los specs de Playwright como propios: los excluí con `exclude: [..., 'e2e/**']`.
+- El primer `pull` en el servidor parecía colgado, pero era la descarga de capas: terminó bien.
+
+### Uso de IA
+Usé Claude para escribir los compose con `image:`, los jobs de integración y e2e, las dos suites de
+Playwright y el borrador de esta sección, y para elegir una rotura que diera el par verde/rojo. Los
+deploys, las aprobaciones, la descarga de los reportes y la lectura de la traza los hice yo, y verifiqué
+cada paso en las corridas de Actions.
