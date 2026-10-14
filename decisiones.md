@@ -333,76 +333,46 @@ deploys, haciendo `docker pull` sin login y comprobando que un dato creado en PR
 ## TP7 — Contenedores en el pipeline + integración y e2e
 
 ### Build once, deploy many
-En el TP6 el deploy hacía `docker compose up --build` en el servidor: QA y PROD eran otra construcción
-del mismo commit, no la imagen que pasó los tests. Si entre los dos builds cambiaba una dependencia o la
-imagen base, PROD podía correr algo que nadie probó. Ahora los compose usan
-`image: ghcr.io/...:${IMAGE_TAG:?falta IMAGE_TAG}` y los deploys hacen `pull` + `up -d` con
-`IMAGE_TAG=sha-<commit>`: QA, las dos suites y PROD usan exactamente la misma imagen.
+En el TP6 el servidor reconstruía la imagen (`compose up --build`), así que PROD no era lo que se probó.
+Ahora los compose usan `image: ghcr.io/...:${IMAGE_TAG}` y QA, las pruebas y PROD corren la misma imagen.
 
 ### Etiquetas
-`sha-<commit>` en el registry identifica la imagen de un build verificado; `v7.0.0` en git nombra la
-versión que llegó a PROD. No publico `latest` porque se mueve de una imagen a otra y no dice qué versión
-corre. Sin `IMAGE_TAG`, compose se niega a arrancar en vez de inventar una etiqueta. No uso Render
-(plan C), así que no hubo servicios viejos que reemplazar.
+`sha-<commit>` identifica la imagen de un build verificado; `v7.0.0` nombra la versión en PROD. No uso
+`latest` porque se mueve y no dice qué corre. Del tag a la imagen: `git rev-list -n1 v7.0.0` → `sha-<ese commit>`.
 
-### De la release a la imagen
-`git rev-list -n1 v7.0.0` da el commit, y la imagen es `ghcr.io/matiasbocco/devops-ingesoft3-backend:sha-<ese commit>`
-(lo mismo para el frontend). Un paso.
+### Cómo sé que corre la imagen
+El log del deploy muestra el `pull` del `sha-<commit>` de la corrida. El smoke no lo prueba: solo pregunta
+si responde.
 
-### Cómo se comprueba que corre la imagen y no un rebuild
-En el log de `deploy-qa` y `deploy-prod` se ve el `pull` del tag `sha-<commit>` de esa corrida, y en el
-servidor `docker compose -f compose.qa.yml images` muestra esa etiqueta. El smoke solo pregunta si la app
-responde: no dice qué imagen está corriendo.
+### Pruebas
+Integración (api de QA, sin navegador): alta y borrado, nombre vacío da 400, y registrar stock suma.
+e2e (navegador contra QA): crear y eliminar, error con nombre en blanco, y cargar stock dos veces suma.
+Elegí la suma de stock porque es lo que el usuario hace todos los días. Las validaciones finas quedan en los
+unitarios del TP5: arriba de la pirámide van pocas pruebas.
 
-### Qué pruebo en cada suite
-**Integración** (`frontend/e2e/api.spec.js`, pedidos HTTP a la api de QA, sin navegador): alta → la base
-la devuelve → borrado → ya no está; nombre vacío → `400` y no se crea nada; y registrar stock de un item
-existente suma la cantidad (2 + 3 = 5 guardado en la base).
-**e2e** (`frontend/e2e/inventario.spec.js`, navegador real contra QA): crear un item → aparece en la tabla →
-eliminarlo → desaparece; nombre en blanco → el usuario ve el error y no se crea nada; y cargar stock dos
-veces del mismo item → la tabla muestra la suma.
-El tercero de cada suite lo elegí yo porque es lo que el usuario hace todos los días: registrar el stock
-que entra. Si deja de sumar, el inventario miente y es lo primero que me reportarían.
-No puse en estas suites lo que ya cubren los unitarios del TP5 (validaciones del formulario, búsqueda y
-orden), porque cada prueba de acá es más lenta y depende de QA: arriba de la pirámide van pocas.
+### Diagnóstico de la rotura
+Hice que el front elimine con `/api/item/{id}`. Integración verde (la api y la base andan) y e2e roja (el
+front no borra; la traza muestra el 404): el problema está en el front. `deploy-prod` ni pidió aprobación.
 
-### El par verde/rojo que diagnosticó la rotura
-Rompí el front para que eliminar llame a `/api/item/{id}`. La integración quedó **verde**: le habla a la
-api con la ruta correcta y la base guarda y borra bien. La e2e quedó **roja**: los dos flujos que eliminan
-no pudieron borrar, y en la traza se ve el `DELETE /api/item/…` con `404`. Verde abajo y rojo arriba quiere
-decir que la api y la base están sanas y el problema está en cómo el front usa la api. `deploy-prod` ni
-pidió aprobación. Si hubiera roto la api, la integración se ponía roja y la e2e ni corría.
+### Integración amplia
+Pruebo contra la api de QA ya desplegada: gano probar la imagen y la base reales con poca configuración;
+pierdo que corre después del deploy y que QA es compartido.
 
-### Integración amplia y no estrecha
-Pruebo contra la api de QA ya desplegada, con su Postgres de verdad, en vez de levantar una api y una base
-descartables dentro del pipeline. Gano que pruebo la imagen real con la base real, con mucha menos
-configuración. Pierdo que llega después del deploy a QA (no antes) y que QA es compartido.
+### Tiempos y flaky
+No hay cold start (servidor siempre prendido). Igual: 15 s por aserción, 60 s por test y 1 retry. Flaky es
+un test que pasa recién en el retry sin cambios en el código.
 
-### Tiempos y tests flaky
-No hay cold start: el servidor está siempre prendido. Igual cada aserción espera hasta 15 s, cada test
-hasta 60 s, y hay 1 retry. Un test flaky es el que a veces pasa y a veces falla sin cambios en el código:
-sale verde recién en el retry. Uno aislado se mira; el mismo dos veces seguidas se arregla.
+### Misma imagen del front
+nginx lee `BACKEND_URL` al arrancar; la URL de la api no está dentro de la imagen.
 
-### La misma imagen del front en QA y en PROD
-nginx lee `BACKEND_URL` y `DNS_RESOLVER` del entorno al arrancar (`default.conf.template`); dentro de la
-imagen quedan el código, el build de Vite y la plantilla. La URL de la api no está horneada.
-
-### Límite conocido: QA es uno solo
-Si mergeo dos PRs seguidos, la corrida B puede redesplegar QA mientras las pruebas de A siguen corriendo,
-y A probaría la imagen de B. Lo reconocería comparando la hora del `deploy-qa` de B con la de las suites de
-A. Lo que hago es mergear de a uno y esperar que terminen `integracion` y `e2e`; si pasa, rechazo A.
+### Límite conocido
+QA es uno solo: dos merges seguidos pueden pisarse las pruebas. Mergeo de a uno.
 
 ### Problemas
-- El runner no tiene Node ni `sudo` para instalar las dependencias del navegador: las suites corren dentro
-  de la imagen oficial de Playwright (`mcr.microsoft.com/playwright:v1.64.0-noble`) con `--network host`
-  para llegar a `localhost` del servidor.
-- Los botones Eliminar no tenían nombre propio y el error no tenía rol: agregué `aria-label="Eliminar <nombre>"`
-  y `role="alert"` para que los tests encuentren los controles como lo haría un lector de pantalla.
-- Vitest tomaba los specs de Playwright como propios: los excluí con `exclude: [..., 'e2e/**']`.
-- El primer `pull` en el servidor parecía colgado, pero era la descarga de capas: terminó bien.
+- El runner no tiene Node ni `sudo`: las suites corren en la imagen oficial de Playwright con `--network host`.
+- Agregué `aria-label` en Eliminar y `role="alert"` en el error para que los tests encuentren los controles.
+- Vitest tomaba los specs de Playwright: los excluí.
 
 ### Uso de IA
-Usé Claude para escribir los compose con `image:`, los jobs de integración y e2e, las dos suites de
-Playwright y el borrador de esta sección, y para elegir una rotura que diera el par verde/rojo. Los
-deploys, las aprobaciones, la descarga de los reportes y la lectura de la traza los hice yo, y verifiqué
-cada paso en las corridas de Actions.
+Claude me ayudó con los compose, los jobs y las suites de Playwright. Los deploys, aprobaciones y la lectura
+de los reportes los hice y verifiqué yo.
