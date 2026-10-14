@@ -36,7 +36,7 @@ export default function ItemList({ categoria, refreshKey }: Props) {
 
   const handleDelete = async (id: number) => {
     if (!confirm('¿Eliminar este item?')) return
-    const res = await fetch(`/api/item/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/items/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setItems((prev) => prev.filter((i) => i.id !== id))
     } else {
