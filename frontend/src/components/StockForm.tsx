@@ -118,7 +118,7 @@ export default function StockForm({ onSuccess }: Props) {
         Agregar / Actualizar Stock
       </button>
       {status && <p style={{ color: 'green' }}>{status}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
     </form>
   )
 }

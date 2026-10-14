@@ -1,4 +1,4 @@
-# Entorno PROD (plan C: lo levanta el job deploy-prod, después de la aprobación).
+# Entorno PROD (plan C): lo levanta el job deploy-prod, después de la aprobación, con la MISMA imagen que QA.
 # `name:` aísla el proyecto: sin él, el deploy de PROD recrearía los contenedores de QA.
 name: prod
 
@@ -18,9 +18,9 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .                      # el Dockerfile copia backend/ y backend.tests/
-      dockerfile: backend/Dockerfile
+    # TP7: se EJECUTA la imagen publicada por el pipeline, no se reconstruye.
+    # Sin IMAGE_TAG (sha-<commit>) compose se niega a arrancar en vez de inventar una etiqueta.
+    image: ghcr.io/matiasbocco/devops-ingesoft3-backend:${IMAGE_TAG:?falta IMAGE_TAG}
     environment:
       DATABASE_URL: "Host=db;Database=inventario;Username=postgres;Password=${POSTGRES_PASSWORD}"
     ports:
@@ -30,7 +30,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/matiasbocco/devops-ingesoft3-frontend:${IMAGE_TAG:?falta IMAGE_TAG}
     environment:
       BACKEND_URL: http://backend:8080   # cada proyecto tiene su propio "backend" en su red
       DNS_RESOLVER: 127.0.0.11

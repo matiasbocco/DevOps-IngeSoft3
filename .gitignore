@@ -26,3 +26,8 @@ backend.tests/backend.tests/
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright (se generan en cada corrida)
+frontend/playwright-report/
+frontend/test-results/
+frontend/coverage/
