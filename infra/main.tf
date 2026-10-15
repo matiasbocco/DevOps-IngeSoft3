@@ -59,3 +59,26 @@ resource "docker_container" "api" {
   }
   depends_on = [docker_container.db]
 }
+
+resource "docker_image" "front" {
+  name         = "ghcr.io/matiasbocco/devops-ingesoft3-frontend:${var.image_tag}"
+  keep_locally = true
+}
+
+resource "docker_container" "front" {
+  name    = "${local.prefix}-front"
+  image   = docker_image.front.image_id
+  restart = "unless-stopped"
+  env = [
+    # DERIVADA: nginx le habla a SU api por el nombre del contenedor, en la red de preprod.
+    "BACKEND_URL=http://${docker_container.api.name}:8080",
+    "DNS_RESOLVER=127.0.0.11", # el DNS interno de Docker resuelve los nombres de la red
+  ]
+  networks_advanced {
+    name = docker_network.app.name
+  }
+  ports {
+    internal = 80
+    external = var.front_port
+  }
+}
