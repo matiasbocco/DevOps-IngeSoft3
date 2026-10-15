@@ -1,0 +1,3 @@
+# Copiá este archivo a local.tfvars (ignorado por git) y completalo. Nunca commitees local.tfvars.
+db_password = "una-password-solo-letras-y-numeros"
+image_tag   = "sha-8ee12c5b4de5d7192c0d78ddf9fea24214414a97" # el commit de v7.0.0, imagen ya publicada
