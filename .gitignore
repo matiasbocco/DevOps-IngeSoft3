@@ -31,3 +31,11 @@ Thumbs.db
 frontend/playwright-report/
 frontend/test-results/
 frontend/coverage/
+
+# Terraform (TP8): el estado y los tfvars tienen secretos y no se versionan
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
