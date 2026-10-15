@@ -26,3 +26,9 @@ variable "front_port" {
   type        = number
   default     = 3002
 }
+
+variable "public_host" {
+  description = "Dirección del servidor en la red de Fulgor, para armar las URLs de salida"
+  type        = string
+  default     = "172.16.0.110"
+}
