@@ -35,3 +35,27 @@ resource "docker_container" "db" {
     container_path = "/var/lib/postgresql/data"
   }
 }
+
+# La api corre LA IMAGEN DEL TP7 (sha-<commit>), no un build.
+resource "docker_image" "api" {
+  name         = "ghcr.io/matiasbocco/devops-ingesoft3-backend:${var.image_tag}"
+  keep_locally = true # puede ser la misma imagen que usa QA o PROD
+}
+
+resource "docker_container" "api" {
+  name    = "${local.prefix}-api"
+  image   = docker_image.api.image_id
+  restart = "unless-stopped" # depends_on espera que la base se CREE, no que esté lista: si arranca antes, reintenta
+  env = [
+    # DERIVADA: el host es el nombre del contenedor de la base, no una dirección copiada.
+    "DATABASE_URL=Host=${docker_container.db.name};Database=inventario;Username=postgres;Password=${var.db_password}",
+  ]
+  networks_advanced {
+    name = docker_network.app.name
+  }
+  ports {
+    internal = 8080
+    external = var.api_port
+  }
+  depends_on = [docker_container.db]
+}
