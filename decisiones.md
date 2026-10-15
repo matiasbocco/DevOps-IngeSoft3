@@ -376,3 +376,23 @@ QA es uno solo: dos merges seguidos pueden pisarse las pruebas. Mergeo de a uno.
 ### Uso de IA
 Claude me ayudó con los compose, los jobs y las suites de Playwright. Los deploys, aprobaciones y la lectura
 de los reportes los hice y verifiqué yo.
+
+## TP8 — Infraestructura como Código
+
+### Riel y versiones
+Plan C: Terraform con el provider `kreuzwerker/docker` (`~> 4.0`, versión exacta en `.terraform.lock.hcl`),
+apuntando por SSH al Docker del servidor de Fulgor. `preprod` es un entorno nuevo (base, api con la imagen
+del TP7 en `:8090` y front en `:3002`) que convive con QA y PROD sin tocarlos. La conexión a la base y la
+URL del backend se derivan de los nombres de los contenedores; la password va como variable sensible y el
+estado vive fuera del repo.
+
+### Problemas
+- El servidor no llega a GitHub Releases, de donde se baja el provider: corro Terraform desde la notebook y
+  le hablo al Docker del servidor por SSH.
+- `fulgor` usaba `sudo docker`: lo agregué al grupo `docker` para que Terraform lo maneje por SSH.
+- `destroy` no puede borrar `postgres:16-alpine` ni las imágenes del TP7 porque QA y PROD las usan:
+  `keep_locally = true` en las imágenes.
+
+### Uso de IA
+Claude me ayudó a escribir el HCL y el README de `infra/`. El `init`, los `plan`, `apply` y `destroy` los
+corrí y leí yo, y comprobé que QA y PROD siguieron intactos.
