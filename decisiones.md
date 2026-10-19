@@ -380,7 +380,7 @@ de los reportes los hice y verifiqué yo.
 ## TP8 — Infraestructura como Código
 
 ### Riel y versiones
-Plan C: Terraform con el provider `kreuzwerker/docker` (`~> 4.0`, versión exacta en `.terraform.lock.hcl`),
+Plan C: Terraform 1.16.6 con el provider kreuzwerker/docker (~> 4.0, fijado en 4.6.0 por el .terraform.lock.hcl), 
 apuntando por SSH al Docker del servidor de Fulgor. `preprod` es un entorno nuevo (base, api con la imagen
 del TP7 en `:8090` y front en `:3002`) que convive con QA y PROD sin tocarlos. La conexión a la base y la
 URL del backend se derivan de los nombres de los contenedores; la password va como variable sensible y el
