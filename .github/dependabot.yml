@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"            # backend y su proyecto de tests (no hay .sln)
+    directories:
+      - "/backend"
+      - "/backend.tests"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"              # frontend
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"   # las actions del workflow también son dependencias
+    directory: "/"
+    schedule:
+      interval: "weekly"
