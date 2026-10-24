@@ -29,7 +29,8 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+// HEAD además de GET: el monitor externo gratuito pregunta con HEAD.
+app.MapMethods("/health", new[] { "GET", "HEAD" }, () => Results.Ok(new { status = "ok" }));
 
 app.MapGet("/api/items", async (AppDbContext db, string? categoria) =>
 {
