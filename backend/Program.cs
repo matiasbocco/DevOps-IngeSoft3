@@ -41,6 +41,9 @@ app.UseSwaggerUI();
 // HEAD además de GET: el monitor externo gratuito pregunta con HEAD.
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => Results.Ok(new { status = "ok" }));
 
+// TP9 — TEMPORAL: un error a propósito para verlo llegar a Sentry. Se saca al cerrar el práctico.
+app.MapGet("/api/falla", string () => throw new InvalidOperationException("Falla de prueba del TP9"));
+
 app.MapGet("/api/items", async (AppDbContext db, string? categoria) =>
 {
     IQueryable<Item> query = db.Items;
