@@ -1,6 +1,8 @@
 using System.Net;
 using Xunit;
 
+namespace InventarioApi.Tests;
+
 public class HealthTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
