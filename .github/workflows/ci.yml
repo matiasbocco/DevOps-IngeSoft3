@@ -50,7 +50,7 @@ jobs:
           cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
       - name: Publicar coverage y resultados
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage-report
@@ -111,7 +111,7 @@ jobs:
           docker run --rm -v "${{ github.workspace }}/frontend/coverage:/app/coverage" frontend-test:ci
 
       - name: Publicar coverage del frontend
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage-report-frontend
@@ -200,7 +200,7 @@ jobs:
             bash -c "npm ci && npx playwright test e2e/api.spec.js"
 
       - name: Publicar reporte de integración
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-integracion
@@ -228,7 +228,7 @@ jobs:
             bash -c "npm ci && npx playwright test e2e/inventario.spec.js"
 
       - name: Publicar reporte e2e
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-e2e
