@@ -17,6 +17,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAlertaReposicionService, AlertaReposicionService>();
 builder.Services.AddScoped<IStockService, StockService>();
 
+// TP9: errores y tiempos de cada pedido a Sentry. El DSN llega por el entorno (solo PROD lo tiene):
+// sin SENTRY_DSN la librería queda apagada y la app anda igual (local, tests, QA).
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
+    o.Environment = "produccion";
+    o.TracesSampleRate = 1.0;   // medir todos los pedidos: la app tiene poco tráfico
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
