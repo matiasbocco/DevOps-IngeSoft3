@@ -23,6 +23,7 @@ services:
     image: ghcr.io/matiasbocco/devops-ingesoft3-backend:${IMAGE_TAG:?falta IMAGE_TAG}
     environment:
       DATABASE_URL: "Host=db;Database=inventario;Username=postgres;Password=${POSTGRES_PASSWORD}"
+      SENTRY_DSN: ${SENTRY_DSN:-}   # TP9: solo PROD reporta a Sentry; vacío = apagado
     ports:
       - "8081:8080"
     depends_on:

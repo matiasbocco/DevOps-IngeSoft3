@@ -17,6 +17,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAlertaReposicionService, AlertaReposicionService>();
 builder.Services.AddScoped<IStockService, StockService>();
 
+// TP9: errores y tiempos de cada pedido a Sentry. El DSN llega por el entorno (solo PROD lo tiene):
+// sin SENTRY_DSN la librería queda apagada y la app anda igual (local, tests, QA).
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
+    o.Environment = "produccion";
+    o.TracesSampleRate = 1.0;   // medir todos los pedidos: la app tiene poco tráfico
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
@@ -31,6 +40,9 @@ app.UseSwaggerUI();
 
 // HEAD además de GET: el monitor externo gratuito pregunta con HEAD.
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => Results.Ok(new { status = "ok" }));
+
+// TP9 — TEMPORAL: un error a propósito para verlo llegar a Sentry. Se saca al cerrar el práctico.
+app.MapGet("/api/falla", string () => throw new InvalidOperationException("Falla de prueba del TP9"));
 
 app.MapGet("/api/items", async (AppDbContext db, string? categoria) =>
 {
