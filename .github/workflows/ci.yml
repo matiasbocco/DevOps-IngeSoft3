@@ -249,6 +249,7 @@ jobs:
     env:
       POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
       IMAGE_TAG: sha-${{ github.sha }}
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}   # variable del environment production (no es secreto)
     steps:
       - name: Bajar los compose del commit verificado
         uses: actions/checkout@v7
