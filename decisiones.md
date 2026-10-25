@@ -396,3 +396,27 @@ estado vive fuera del repo.
 ### Uso de IA
 Claude me ayudó a escribir el HCL y el README de `infra/`. El `init`, los `plan`, `apply` y `destroy` los
 corrí y leí yo, y comprobé que QA y PROD siguieron intactos.
+
+## TP9 — DevSecOps + Observabilidad
+
+### Dependabot
+Mergeé `actions/checkout` 6 → 7 (#41). Es major, pero solo toca el CI y todos los jobs lo usan primero: si
+rompía algo no corría nada. Me animé porque la cadena entera (builds, QA, integración y e2e) quedó en verde.
+Otros PRs quedaron en rojo (EF Core 9, jsdom, plugin-react): Dependabot propone, el CI decide.
+
+### Monitor y Sentry
+El monitor me avisó **26 s** después de bajar el backend de PROD (stop 23:38:09, mail DOWN 23:38:35).
+Sentry: la operación más usada es `GET /api/items` y la más lenta `POST /api/items/stock` (P95 201 ms):
+busca el item con `lower(Nombre)` y `lower(Ubicacion)`, que no usa índice. Abrí una tarjeta para eso.
+
+### Problemas
+- PROD está en la red interna de Fulgor y no podía exponerla: el monitor es un Uptime Kuma propio en mi
+  notebook (lo que usamos en Fulgor), que llega a PROD por un túnel SSH y avisa por mail. Solo vigila
+  con la notebook prendida.
+- `/health` solo aceptaba GET y el monitor pregunta con HEAD: lo cambié a GET y HEAD, con su test.
+- El DSN del back va como variable del environment `production`; sin ella Sentry queda apagado (local,
+  tests, QA). El del front va en el código porque solo sirve para enviar.
+
+### Uso de IA
+Claude me ayudó con el `dependabot.yml`, el cambio de `/health` y la integración de Sentry. Las
+protecciones de GitHub, las cuentas, Kuma, la caída provocada y la lectura de Sentry las hice y verifiqué yo.
